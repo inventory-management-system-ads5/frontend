@@ -1,5 +1,9 @@
 import AddIcon from "@mui/icons-material/Add"
 import EditIcon from '@mui/icons-material/Edit'
+import CheckIcon from '@mui/icons-material/Check'
+import CloseIcon from '@mui/icons-material/Close'
+import BlockIcon from '@mui/icons-material/Block'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 const { useState } = require("react")
 const { useEffect } = require("react");
 const { Box, TableContainer, Paper, Typography, Button, IconButton, Divider, Table, TableHead, TableRow, TableCell, TableBody, Modal, TextField, Snackbar, Alert } = require('@mui/material');
@@ -16,6 +20,9 @@ const Suppliers = () => {
 
     // state variable to store the suppliers list
     const [suppliers, setSuppliers] = useState([]);
+
+    // state variable to control edit mode
+    const [editingSupplier, setEditingSupplier] = useState(null);
 
     // further
     // state variable to store a supplier data
@@ -61,6 +68,15 @@ const Suppliers = () => {
         setFormData({ ...formData, [name]: value });
     }
 
+    // function for handling supplier update
+    const handleSupplierUpdate = (supplier) => {
+        setEditingSupplier(supplier);
+        setFormData({
+            name: supplier.name,
+            contact_info: supplier.contact_info
+        });
+    };
+
     // function for handling the creation of a supplier
     async function save() {
 
@@ -102,7 +118,7 @@ const Suppliers = () => {
                     name: '',
                     contact_info: ''
                 });
-                
+
                 // closing the modal upon form reset
                 setOpenModal(false)
 
@@ -122,6 +138,99 @@ const Suppliers = () => {
         }
     };
 
+    // function for handling the update of a supplier
+    async function updateSupplier() {
+        if (!formData.name || !formData.contact_info) {
+            setAertMessage('Para prosseguir com a edição do Fornecedor, todos os campos obrigatórios devem ser preenchidos!');
+            setAlertSeverity('warning');
+            setAlert(true);
+            return;
+        }
+
+        if (formData.name.length <= 2 || formData.contact_info.length < 8) {
+            setAertMessage('Um Fornecedor deve ter um nome com pelo menos 2 caracteres e um número com 8 dígitos para as informações de contato!');
+            setAlertSeverity('warning');
+            setAlert(true);
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/supplier/${editingSupplier.id}/update/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                console.log('Fornecedor atualizado com sucesso!', data);
+                setAertMessage('Fornecedor atualizado com sucesso!');
+                setAlertSeverity('success');
+                setAlert(true);
+
+                // resetting the form fields and edit mode
+                setFormData({
+                    name: '',
+                    contact_info: ''
+                });
+                setEditingSupplier(null);
+
+                // calling the fetching of all the existing suppliers
+                getSuppliers();
+            } else {
+                console.error('Falha ao atualizar o Fornecedor!', data);
+                setAertMessage('Falha ao atualizar o Fornecedor!');
+                setAlertSeverity('error');
+                setAlert(true);
+            }
+        } catch (error) {
+            console.log('Ocorreu um erro ao atualizar o Fornecedor!', error);
+            setAertMessage('Ocorreu um erro ao atualizar o Fornecedor!');
+            setAlertSeverity('error');
+            setAlert(true);
+        }
+    };
+
+    // function for handling the update of a supplier status
+    async function updateSupplierStatus(supplier) {
+        try {
+            const response = await fetch(`http://localhost:8080/api/supplier/${supplier.id}/update-status/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    is_active: !supplier.is_active
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                console.log('Status do fornecedor atualizado com sucesso!', data);
+                setAertMessage('Status do fornecedor atualizado com sucesso!');
+                setAlertSeverity('success');
+                setAlert(true);
+
+                // calling the fetching of all the existing suppliers
+                getSuppliers();
+            } else {
+                console.error('Falha ao atualizar o status do fornecedor!', data);
+                setAertMessage('Falha ao atualizar o status do fornecedor!');
+                setAlertSeverity('error');
+                setAlert(true);
+            }
+        } catch (error) {
+            console.log('Ocorreu um erro ao atualizar o status do fornecedor!', error);
+            setAertMessage('Ocorreu um erro ao atualizar o status do fornecedor!');
+            setAlertSeverity('error');
+            setAlert(true);
+        }
+    };
+
     return (
         <Box p={8} width='100%'>
             <TableContainer
@@ -135,7 +244,7 @@ const Suppliers = () => {
                     justifyContent='center'
                     alignItems='center'
                 >
-                    <Typography 
+                    <Typography
                         variant='h3'
                         component='h1'
                         gutterBottom
@@ -198,35 +307,52 @@ const Suppliers = () => {
                                         cursor: 'pointer',
                                     },
                                 }}>
-                                <TableCell 
+                                <TableCell
                                     align="center"
                                     sx={{ fontSize:'1rem' }}
-
                                 >
                                     {supplier.id}
                                 </TableCell>
-                                <TableCell 
+                                <TableCell
                                     align="center"
                                     sx={{ fontSize:'1rem' }}
-
                                 >
-                                    {supplier.name}
-                                </TableCell>
-                                <TableCell 
-                                    align="center"
-                                    sx={{ fontSize:'1rem' }}
-
-                                >
-                                    {supplier.contact_info}
+                                    {editingSupplier?.id === supplier.id ? (
+                                        <TextField
+                                            size="small"
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            name="name"
+                                            fullWidth
+                                        />
+                                    ) : (
+                                        supplier.name
+                                    )}
                                 </TableCell>
                                 <TableCell
                                     align="center"
-                                    
-
+                                    sx={{ fontSize:'1rem' }}
+                                >
+                                    {editingSupplier?.id === supplier.id ? (
+                                        <TextField
+                                            size="small"
+                                            value={formData.contact_info}
+                                            onChange={handleChange}
+                                            name="contact_info"
+                                            fullWidth
+                                        />
+                                    ) : (
+                                        supplier.contact_info
+                                    )}
+                                </TableCell>
+                                <TableCell
+                                    align="center"
                                 >
                                     <Box
                                         display="flex"
                                         justifyContent="center"
+                                        alignItems="center"
+                                        gap={2}
                                         width="full"
                                     >
                                         {supplier.is_active ? (
@@ -237,7 +363,7 @@ const Suppliers = () => {
                                                 borderRadius="10px"
                                                 color="#FFFFFF"
                                             >
-                                                Active
+                                                Ativo
                                             </Box>
                                         ) : (
                                             <Box
@@ -247,18 +373,57 @@ const Suppliers = () => {
                                                 borderRadius="10px"
                                                 color="#FFFFFF"
                                             >
-                                                Inactive
+                                                Inativo
                                             </Box>
+                                        )}
+                                        {editingSupplier?.id === supplier.id && (
+                                            <IconButton
+                                                aria-label="Toggle Status"
+                                                onClick={() => updateSupplierStatus(supplier)}
+                                                sx={{
+                                                    color: supplier.is_active ? '#C54040' : '#87AA20',
+                                                    '&:hover': {
+                                                        backgroundColor: supplier.is_active ? 'rgba(197, 64, 64, 0.1)' : 'rgba(135, 170, 32, 0.1)'
+                                                    }
+                                                }}
+                                            >
+                                                {supplier.is_active ? <BlockIcon /> : <CheckCircleIcon />}
+                                            </IconButton>
                                         )}
                                     </Box>
                                 </TableCell>
                                 <TableCell align="center">
-                                    <IconButton
-                                        aria-label="Edit"
-                                    // onClick={() => handleSupplierUpdate(supplier)}
-                                    >
-                                        <EditIcon />
-                                    </IconButton>
+                                    {editingSupplier?.id === supplier.id ? (
+                                        <Box>
+                                            <IconButton
+                                                aria-label="Save"
+                                                onClick={updateSupplier}
+                                                sx={{ color: '#87AA20' }}
+                                            >
+                                                <CheckIcon />
+                                            </IconButton>
+                                            <IconButton
+                                                aria-label="Cancel"
+                                                onClick={() => {
+                                                    setEditingSupplier(null);
+                                                    setFormData({
+                                                        name: '',
+                                                        contact_info: ''
+                                                    });
+                                                }}
+                                                sx={{ color: '#C54040' }}
+                                            >
+                                                <CloseIcon />
+                                            </IconButton>
+                                        </Box>
+                                    ) : (
+                                        <IconButton
+                                            aria-label="Edit"
+                                            onClick={() => handleSupplierUpdate(supplier)}
+                                        >
+                                            <EditIcon />
+                                        </IconButton>
+                                    )}
                                 </TableCell>
                             </TableRow>))}
                     </TableBody>
@@ -299,7 +464,7 @@ const Suppliers = () => {
                     />
 
                     <Box display="flex" justifyContent="center" mt={2}>
-                        <Button 
+                        <Button
                             variant="contained"
                             size="large"
                             sx={{ fontWeight: 'bold', backgroundColor: '#384dc9' }}
