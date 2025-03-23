@@ -141,14 +141,14 @@ const Suppliers = () => {
     // function for handling the update of a supplier
     async function updateSupplier() {
         if (!formData.name || !formData.contact_info) {
-            setAertMessage('Para prosseguir com a edição do Fornecedor, todos os campos obrigatórios devem ser preenchidos!');
+            setAertMessage('To proceed with the update of a Supplier, all the required fields must be filled out!');
             setAlertSeverity('warning');
             setAlert(true);
             return;
         }
 
         if (formData.name.length <= 2 || formData.contact_info.length < 8) {
-            setAertMessage('Um Fornecedor deve ter um nome com pelo menos 2 caracteres e um número com 8 dígitos para as informações de contato!');
+            setAertMessage('A Supplier must have a name with at least 2 characters, and a number with 8 digits for the contact info!');
             setAlertSeverity('warning');
             setAlert(true);
             return;
@@ -166,8 +166,8 @@ const Suppliers = () => {
             const data = await response.json();
 
             if (response.ok) {
-                console.log('Fornecedor atualizado com sucesso!', data);
-                setAertMessage('Fornecedor atualizado com sucesso!');
+                console.log('Supplier updated with succes!', data);
+                setAertMessage('Supplier updated with succes!');
                 setAlertSeverity('success');
                 setAlert(true);
 
@@ -181,14 +181,14 @@ const Suppliers = () => {
                 // calling the fetching of all the existing suppliers
                 getSuppliers();
             } else {
-                console.error('Falha ao atualizar o Fornecedor!', data);
-                setAertMessage('Falha ao atualizar o Fornecedor!');
+                console.error('Failed to update the Supplier!', data);
+                setAertMessage('Failed to update the Supplier!');
                 setAlertSeverity('error');
                 setAlert(true);
             }
         } catch (error) {
-            console.log('Ocorreu um erro ao atualizar o Fornecedor!', error);
-            setAertMessage('Ocorreu um erro ao atualizar o Fornecedor!');
+            console.log('An error occured while updating the Supplier!', error);
+            setAertMessage('An error occured while updating the Supplier!');
             setAlertSeverity('error');
             setAlert(true);
         }
@@ -210,22 +210,22 @@ const Suppliers = () => {
             const data = await response.json();
 
             if (response.ok) {
-                console.log('Status do fornecedor atualizado com sucesso!', data);
-                setAertMessage('Status do fornecedor atualizado com sucesso!');
+                console.log('Supplier status updated with success!', data);
+                setAertMessage('Supplier status updated with success!');
                 setAlertSeverity('success');
                 setAlert(true);
 
                 // calling the fetching of all the existing suppliers
                 getSuppliers();
             } else {
-                console.error('Falha ao atualizar o status do fornecedor!', data);
-                setAertMessage('Falha ao atualizar o status do fornecedor!');
+                console.error('Failed to update the Supplier status!', data);
+                setAertMessage('Failed to update the Supplier status!');
                 setAlertSeverity('error');
                 setAlert(true);
             }
         } catch (error) {
-            console.log('Ocorreu um erro ao atualizar o status do fornecedor!', error);
-            setAertMessage('Ocorreu um erro ao atualizar o status do fornecedor!');
+            console.log('An error occured while updating the Supplier status!', error);
+            setAertMessage('An error occured while updating the Supplier status!');
             setAlertSeverity('error');
             setAlert(true);
         }
@@ -363,7 +363,7 @@ const Suppliers = () => {
                                                 borderRadius="10px"
                                                 color="#FFFFFF"
                                             >
-                                                Ativo
+                                                Active
                                             </Box>
                                         ) : (
                                             <Box
@@ -373,7 +373,7 @@ const Suppliers = () => {
                                                 borderRadius="10px"
                                                 color="#FFFFFF"
                                             >
-                                                Inativo
+                                                Inactive
                                             </Box>
                                         )}
                                         {editingSupplier?.id === supplier.id && (
