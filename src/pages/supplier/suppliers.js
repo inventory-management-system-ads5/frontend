@@ -4,6 +4,7 @@ import CheckIcon from '@mui/icons-material/Check'
 import CloseIcon from '@mui/icons-material/Close'
 import BlockIcon from '@mui/icons-material/Block'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import DeleteIcon from '@mui/icons-material/Delete'
 const { useState } = require("react")
 const { useEffect } = require("react");
 const { Box, TableContainer, Paper, Typography, Button, IconButton, Divider, Table, TableHead, TableRow, TableCell, TableBody, Modal, TextField, Snackbar, Alert } = require('@mui/material');
@@ -231,6 +232,42 @@ const Suppliers = () => {
         }
     };
 
+    // function for handling the deletion of a supplier
+    async function deleteSupplier(supplier) {
+        try {
+            const response = await fetch(`http://localhost:8080/api/supplier/${supplier.id}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                console.log('Supplier deleted successfully!');
+                setAertMessage('Supplier deleted successfully!');
+                setAlertSeverity('success');
+                setAlert(true);
+
+                // Atualizando a lista localmente primeiro
+                setSuppliers(prevSuppliers => prevSuppliers.filter(s => s.id !== supplier.id));
+
+                // Chamando getSuppliers para garantir sincronização com o backend
+                getSuppliers();
+            } else {
+                const data = await response.json();
+                console.error('Failed to delete supplier!', data);
+                setAertMessage('Failed to delete supplier!');
+                setAlertSeverity('error');
+                setAlert(true);
+            }
+        } catch (error) {
+            console.log('An error occurred while deleting the supplier!', error);
+            setAertMessage('An error occurred while deleting the supplier!');
+            setAlertSeverity('error');
+            setAlert(true);
+        }
+    };
+
     return (
         <Box p={8} width='100%'>
             <TableContainer
@@ -417,12 +454,22 @@ const Suppliers = () => {
                                             </IconButton>
                                         </Box>
                                     ) : (
-                                        <IconButton
-                                            aria-label="Edit"
-                                            onClick={() => handleSupplierUpdate(supplier)}
-                                        >
-                                            <EditIcon />
-                                        </IconButton>
+                                        <Box>
+                                            <IconButton
+                                                aria-label="Edit"
+                                                onClick={() => handleSupplierUpdate(supplier)}
+                                                sx={{ color: '#384dc9' }}
+                                            >
+                                                <EditIcon />
+                                            </IconButton>
+                                            <IconButton
+                                                aria-label="Delete"
+                                                onClick={() => deleteSupplier(supplier)}
+                                                sx={{ color: '#C54040' }}
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </Box>
                                     )}
                                 </TableCell>
                             </TableRow>))}
