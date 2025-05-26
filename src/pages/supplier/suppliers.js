@@ -220,7 +220,7 @@ const Suppliers = () => {
                         gutterBottom
                         sx={{ textAlign: 'center', flex: '1' }}
                     >
-                        Fornecedores
+                        Suppliers
                     </Typography>
                     <Box display="flex" gap={2}>
                         <Button
@@ -230,7 +230,7 @@ const Suppliers = () => {
                             sx={{ fontWeight: 'bold', backgroundColor: '#87AA20' }}
                             onClick={exportSuppliers}
                         >
-                            EXPORTAR
+                            EXPORT
                         </Button>
                         <Button
                             variant='contained'
@@ -239,7 +239,7 @@ const Suppliers = () => {
                             sx={{ fontWeight: 'bold', backgroundColor: '#384dc9' }}
                             onClick={() => setOpenModal(true)}
                         >
-                            ADICIONAR
+                            ADD
                         </Button>
                     </Box>
                 </Box>
@@ -257,13 +257,13 @@ const Suppliers = () => {
                                 align='center'
                                 sx={{ fontWeight: 'bold', fontSize:'1.15rem' }}
                             >
-                                Nome
+                                Name
                             </TableCell>
                             <TableCell
                                 align='center'
                                 sx={{ fontWeight: 'bold', fontSize:'1.15rem' }}
                             >
-                                Contato
+                                Contact Info
                             </TableCell>
                             <TableCell
                                 align='center'
@@ -275,7 +275,7 @@ const Suppliers = () => {
                                 align='center'
                                 sx={{ fontWeight: 'bold', fontSize:'1.15rem' }}
                             >
-                                Ações
+                                Actions
                             </TableCell>
                         </TableRow>
                     </TableHead>
@@ -344,7 +344,7 @@ const Suppliers = () => {
                                                 borderRadius="10px"
                                                 color="#FFFFFF"
                                             >
-                                                Ativo
+                                                Active
                                             </Box>
                                         ) : (
                                             <Box
@@ -354,7 +354,7 @@ const Suppliers = () => {
                                                 borderRadius="10px"
                                                 color="#FFFFFF"
                                             >
-                                                Inativo
+                                                Inactive
                                             </Box>
                                         )}
                                         {editingSupplier?.id === supplier.id && (
@@ -430,11 +430,11 @@ const Suppliers = () => {
                     sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', minWidth: 380, p: 4, borderRadius: '8px' }}
                 >
                     <Typography variant='h3' component='h2' gutterBottom>
-                        Criar Fornecedor
+                        Create Supplier
                     </Typography>
 
                     <TextField
-                        label="Nome"
+                        label="Name"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
@@ -443,7 +443,7 @@ const Suppliers = () => {
                     />
 
                     <TextField
-                        label="Contato"
+                        label="Contact"
                         name="contact_info"
                         value={formData.contact_info}
                         onChange={handleChange}
@@ -458,7 +458,7 @@ const Suppliers = () => {
                             sx={{ fontWeight: 'bold', backgroundColor: '#384dc9' }}
                             onClick={save}
                         >
-                            Criar Fornecedor
+                            Create Supplier
                         </Button>
                     </Box>
                 </Box>

@@ -53,14 +53,14 @@ export const api = {
     },
 
     async delete(endpoint) {
-        const response = await fetch(`${API_URL}${endpoint}`, {
+        await fetch(`${API_URL}${endpoint}`, {
             method: 'DELETE',
             headers: {
                 ...getAuthHeader(),
                 'Content-Type': 'application/json',
             },
         });
-        return response.json();
+        return {};
     },
 
     async download(endpoint) {
