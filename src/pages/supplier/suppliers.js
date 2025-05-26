@@ -5,71 +5,52 @@ import CloseIcon from '@mui/icons-material/Close'
 import BlockIcon from '@mui/icons-material/Block'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DeleteIcon from '@mui/icons-material/Delete'
-const { useState } = require("react")
-const { useEffect } = require("react");
-const { Box, TableContainer, Paper, Typography, Button, IconButton, Divider, Table, TableHead, TableRow, TableCell, TableBody, Modal, TextField, Snackbar, Alert } = require('@mui/material');
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
+import { useState, useEffect } from "react";
+import { Box, TableContainer, Paper, Typography, Button, IconButton, Divider, Table, TableHead, TableRow, TableCell, TableBody, Modal, TextField, Snackbar, Alert } from '@mui/material';
+import { api } from '../../services/api';
+
+const API_URL = 'http://localhost:8080/api';
+
+const getAuthHeader = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 const Suppliers = () => {
-
-    // state variable to control the opening of modals
     const [openModal, setOpenModal] = useState(false);
-
-    // state variables for controlling alerts visibility, severity and message
-    const [alert, setAlert] = useState(false); // controls the visibility of the alert
-    const [alertSeverity, setAlertSeverity] = useState(''); // controls the type of the alert
-    const [alertMessage, setAertMessage] = useState(''); // holds the message of the alert
-
-    // state variable to store the suppliers list
+    const [alert, setAlert] = useState(false);
+    const [alertSeverity, setAlertSeverity] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
     const [suppliers, setSuppliers] = useState([]);
-
-    // state variable to control edit mode
     const [editingSupplier, setEditingSupplier] = useState(null);
-
-    // further
-    // state variable to store a supplier data
-    // const [supplier, setSupplier] = useState({});
-
-    // fetching all the existing suppliers
-    const getSuppliers = async () => {
-        try {
-            const response = await fetch('http://localhost:8080/api/supplier/', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setSuppliers(data);
-                console.log('Suppliers listed with success!', data);
-            } else {
-                console.error('Failed to fetch the Suppliers list!', data);
-            }
-        } catch (error) {
-            console.log('An error occured while trying to fetch de Suppliers list!', error);
-        }
-    };
-
-    // synchornizing all fetched supplier data
-    useEffect(() => {
-        getSuppliers();
-    }, []);
-
-    // state variable to manage form inputted data
     const [formData, setFormData] = useState({
         name: '',
         contact_info: ''
     });
 
-    // function for handling form default state and input changes
+    const getSuppliers = async () => {
+        try {
+            const data = await api.get('/supplier/');
+            setSuppliers(data);
+            console.log('Suppliers listed with success!', data);
+        } catch (error) {
+            console.error('Failed to fetch the Suppliers list!', error);
+            setAlertMessage('Error loading suppliers list');
+            setAlertSeverity('error');
+            setAlert(true);
+        }
+    };
+
+    useEffect(() => {
+        getSuppliers();
+    }, []);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     }
 
-    // function for handling supplier update
     const handleSupplierUpdate = (supplier) => {
         setEditingSupplier(supplier);
         setFormData({
@@ -78,191 +59,143 @@ const Suppliers = () => {
         });
     };
 
-    // function for handling the creation of a supplier
-    async function save() {
-
-        // check if all the required fieds are filled
+    const save = async () => {
         if (!formData.name || !formData.contact_info) {
-            setAertMessage('To proceed with the creation of a Supplier, all the required fields must be filled out!');
-            setAlertSeverity('warning');
-            setAlert(true);
-            return;
-        };
-
-        // check if the given data is valid
-        if (formData.name.length <= 2 || formData.contact_info.length < 8) {
-            setAertMessage('A Supplier must have a name with at least 2 characters, and a number with 8 digits for the contact info!');
-            setAlertSeverity('warning');
-            setAlert(true);
-            return;
-        }
-
-        try {
-            const response = await fetch('http://localhost:8080/api/supplier/add/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                console.log('Supplier created with succes!', data);
-                setAertMessage('Supplier created with succes!', data);
-                setAlertSeverity('success');
-                setAlert(true);
-
-                // resetting the form fields
-                setFormData({
-                    name: '',
-                    contact_info: ''
-                });
-
-                // closing the modal upon form reset
-                setOpenModal(false)
-
-                // callling the fetching of all the existing suppliers
-                getSuppliers();
-            } else {
-                console.error('Failed to register the Supplier!', data);
-                setAertMessage('Failed to register the Supplier!');
-                setAlertSeverity('error');
-                setAlert(true);
-            }
-        } catch (error) {
-            console.log('An error occured while registering the Supplier!', error);
-            setAertMessage('An error occured while registering the Supplier!');
-            setAlertSeverity('error');
-            setAlert(true);
-        }
-    };
-
-    // function for handling the update of a supplier
-    async function updateSupplier() {
-        if (!formData.name || !formData.contact_info) {
-            setAertMessage('To proceed with the update of a Supplier, all the required fields must be filled out!');
+            setAlertMessage('All fields are required!');
             setAlertSeverity('warning');
             setAlert(true);
             return;
         }
 
         if (formData.name.length <= 2 || formData.contact_info.length < 8) {
-            setAertMessage('A Supplier must have a name with at least 2 characters, and a number with 8 digits for the contact info!');
+            setAlertMessage('Name must have at least 2 characters and contact must have at least 8 digits!');
             setAlertSeverity('warning');
             setAlert(true);
             return;
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/supplier/${editingSupplier.id}/update/`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
+            const data = await api.post('/supplier/add/', formData);
+            console.log('Supplier created with success!', data);
+            setAlertMessage('Supplier created successfully!');
+            setAlertSeverity('success');
+            setAlert(true);
+
+            setFormData({
+                name: '',
+                contact_info: ''
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                console.log('Supplier updated with succes!', data);
-                setAertMessage('Supplier updated with succes!');
-                setAlertSeverity('success');
-                setAlert(true);
-
-                // resetting the form fields and edit mode
-                setFormData({
-                    name: '',
-                    contact_info: ''
-                });
-                setEditingSupplier(null);
-
-                // calling the fetching of all the existing suppliers
-                getSuppliers();
-            } else {
-                console.error('Failed to update the Supplier!', data);
-                setAertMessage('Failed to update the Supplier!');
-                setAlertSeverity('error');
-                setAlert(true);
-            }
+            setOpenModal(false);
+            getSuppliers();
         } catch (error) {
-            console.log('An error occured while updating the Supplier!', error);
-            setAertMessage('An error occured while updating the Supplier!');
+            console.error('Failed to register the Supplier!', error);
+            setAlertMessage('Error creating supplier');
             setAlertSeverity('error');
             setAlert(true);
         }
     };
 
-    // function for handling the update of a supplier status
-    async function updateSupplierStatus(supplier) {
+    const updateSupplier = async () => {
+        if (!formData.name || !formData.contact_info) {
+            setAlertMessage('All fields are required!');
+            setAlertSeverity('warning');
+            setAlert(true);
+            return;
+        }
+
+        if (formData.name.length <= 2 || formData.contact_info.length < 8) {
+            setAlertMessage('Name must have at least 2 characters and contact must have at least 8 digits!');
+            setAlertSeverity('warning');
+            setAlert(true);
+            return;
+        }
+
         try {
-            const response = await fetch(`http://localhost:8080/api/supplier/${supplier.id}/update-status/`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    is_active: !supplier.is_active
-                })
+            const data = await api.put(`/supplier/${editingSupplier.id}/update/`, formData);
+            console.log('Supplier updated with success!', data);
+            setAlertMessage('Supplier updated successfully!');
+            setAlertSeverity('success');
+            setAlert(true);
+
+            setFormData({
+                name: '',
+                contact_info: ''
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                console.log('Supplier status updated with success!', data);
-                setAertMessage('Supplier status updated with success!');
-                setAlertSeverity('success');
-                setAlert(true);
-
-                // calling the fetching of all the existing suppliers
-                getSuppliers();
-            } else {
-                console.error('Failed to update the Supplier status!', data);
-                setAertMessage('Failed to update the Supplier status!');
-                setAlertSeverity('error');
-                setAlert(true);
-            }
+            setEditingSupplier(null);
+            getSuppliers();
         } catch (error) {
-            console.log('An error occured while updating the Supplier status!', error);
-            setAertMessage('An error occured while updating the Supplier status!');
+            console.error('Failed to update the Supplier!', error);
+            setAlertMessage('Error updating supplier');
             setAlertSeverity('error');
             setAlert(true);
         }
     };
 
-    // function for handling the deletion of a supplier
-    async function deleteSupplier(supplier) {
+    const updateSupplierStatus = async (supplier) => {
         try {
-            const response = await fetch(`http://localhost:8080/api/supplier/${supplier.id}/delete/`, {
-                method: 'DELETE',
+            const data = await api.patch(`/supplier/${supplier.id}/update-status/`, {
+                is_active: !supplier.is_active
+            });
+            console.log('Supplier status updated with success!', data);
+            setAlertMessage('Supplier status updated successfully!');
+            setAlertSeverity('success');
+            setAlert(true);
+            getSuppliers();
+        } catch (error) {
+            console.error('Failed to update the Supplier status!', error);
+            setAlertMessage('Error updating supplier status');
+            setAlertSeverity('error');
+            setAlert(true);
+        }
+    };
+
+    const deleteSupplier = async (supplier) => {
+        try {
+            await api.delete(`/supplier/${supplier.id}/delete/`);
+            console.log('Supplier deleted successfully!');
+            setAlertMessage('Supplier deleted successfully!');
+            setAlertSeverity('success');
+            setAlert(true);
+            getSuppliers();
+        } catch (error) {
+            console.error('Failed to delete the Supplier!', error);
+            setAlertMessage('Error deleting supplier');
+            setAlertSeverity('error');
+            setAlert(true);
+        }
+    };
+
+    const exportSuppliers = async () => {
+        try {
+            const response = await fetch(`${API_URL}/supplier/export/csv/`, {
+                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json'
-                }
+                    ...getAuthHeader(),
+                    'Accept': 'text/csv, application/csv',
+                },
             });
 
-            if (response.ok) {
-                console.log('Supplier deleted successfully!');
-                setAertMessage('Supplier deleted successfully!');
-                setAlertSeverity('success');
-                setAlert(true);
-
-                // Atualizando a lista localmente primeiro
-                setSuppliers(prevSuppliers => prevSuppliers.filter(s => s.id !== supplier.id));
-
-                // Chamando getSuppliers para garantir sincronização com o backend
-                getSuppliers();
-            } else {
-                const data = await response.json();
-                console.error('Failed to delete supplier!', data);
-                setAertMessage('Failed to delete supplier!');
-                setAlertSeverity('error');
-                setAlert(true);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Error exporting suppliers');
             }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'suppliers.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            setAlertMessage('Suppliers exported successfully!');
+            setAlertSeverity('success');
+            setAlert(true);
         } catch (error) {
-            console.log('An error occurred while deleting the supplier!', error);
-            setAertMessage('An error occurred while deleting the supplier!');
+            console.error('Error exporting suppliers:', error);
+            setAlertMessage(error.message || 'Error exporting suppliers');
             setAlertSeverity('error');
             setAlert(true);
         }
@@ -289,15 +222,26 @@ const Suppliers = () => {
                     >
                         Suppliers
                     </Typography>
-                    <Button
-                        variant='contained'
-                        size='large'
-                        endIcon={<AddIcon />}
-                        sx={{ fontWeight: 'bold', backgroundColor: '#384dc9' }}
-                        onClick={() => setOpenModal(true)}
-                    >
-                        ADD
-                    </Button>
+                    <Box display="flex" gap={2}>
+                        <Button
+                            variant='contained'
+                            size='large'
+                            endIcon={<FileDownloadIcon />}
+                            sx={{ fontWeight: 'bold', backgroundColor: '#87AA20' }}
+                            onClick={exportSuppliers}
+                        >
+                            EXPORT
+                        </Button>
+                        <Button
+                            variant='contained'
+                            size='large'
+                            endIcon={<AddIcon />}
+                            sx={{ fontWeight: 'bold', backgroundColor: '#384dc9' }}
+                            onClick={() => setOpenModal(true)}
+                        >
+                            ADD
+                        </Button>
+                    </Box>
                 </Box>
                 <Divider />
                 <Table arial-label='suppliers table'>
@@ -477,7 +421,6 @@ const Suppliers = () => {
                 </Table>
             </TableContainer>
 
-            {/* modal component for adding a product */}
             <Modal open={openModal}
                 onClose={() => setOpenModal(false)}
             >
@@ -487,10 +430,9 @@ const Suppliers = () => {
                     sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', minWidth: 380, p: 4, borderRadius: '8px' }}
                 >
                     <Typography variant='h3' component='h2' gutterBottom>
-                        Create a Supplier
+                        Create Supplier
                     </Typography>
 
-                    {/* name field configuration */}
                     <TextField
                         label="Name"
                         name="name"
@@ -500,9 +442,8 @@ const Suppliers = () => {
                         margin="normal"
                     />
 
-                    {/* contact_info field configuration */}
                     <TextField
-                        label="Contact Info"
+                        label="Contact"
                         name="contact_info"
                         value={formData.contact_info}
                         onChange={handleChange}
@@ -523,12 +464,11 @@ const Suppliers = () => {
                 </Box>
             </Modal>
 
-            {/* snackbar component for on-screen alerts */}
             <Snackbar
                 open={alert}
-                autoHideDuration={6000} // Duration on milliseconds before closing the alert
+                autoHideDuration={6000}
                 onClose={() => setAlert(false)}
-                anchorOrigin={{ vertical: 'down', horizontal: 'left' }} // Snackbar's screen relative position
+                anchorOrigin={{ vertical: 'down', horizontal: 'left' }}
             >
                 <Alert
                     onClose={() => setAlert(false)}
@@ -538,7 +478,6 @@ const Suppliers = () => {
                     {alertMessage}
                 </Alert>
             </Snackbar>
-
         </Box>
     );
 };
