@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/login';
 import Dashboard from './pages/dashboard';
 import Suppliers from './pages/supplier/suppliers';
+import Categories from './pages/category/categories';
 
 const PrivateRoute = ({ children }) => {
     const token = localStorage.getItem('token');
@@ -27,6 +28,14 @@ function App() {
                     element={
                         <PrivateRoute>
                             <Suppliers />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/category"
+                    element={
+                        <PrivateRoute>
+                            <Categories />
                         </PrivateRoute>
                     }
                 />

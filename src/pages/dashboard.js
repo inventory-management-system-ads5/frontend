@@ -16,6 +16,12 @@ const Dashboard = () => {
         >
           Manage Suppliers
         </Button>
+        <Button
+          variant="contained"
+          onClick={() => navigate('/category')}
+        >
+          Manage Categories
+        </Button>
       </Box>
     </Box>
   );
