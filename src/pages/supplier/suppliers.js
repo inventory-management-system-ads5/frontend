@@ -6,9 +6,10 @@ import BlockIcon from '@mui/icons-material/Block'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DeleteIcon from '@mui/icons-material/Delete'
 import FileDownloadIcon from '@mui/icons-material/FileDownload'
-import { useState, useEffect } from "react";
-import { Box, TableContainer, Paper, Typography, Button, IconButton, Divider, Table, TableHead, TableRow, TableCell, TableBody, Modal, TextField, Snackbar, Alert } from '@mui/material';
+import { useState, useEffect, useCallback } from "react";
+import { Box, TableContainer, Paper, Typography, Button, IconButton, Divider, Table, TableHead, TableRow, TableCell, TableBody, Modal, TextField, Snackbar, Alert, CircularProgress } from '@mui/material';
 import { api } from '../../services/api';
+import SupplierSearchFilter from "../../components/supplierSearchFilter"
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -28,10 +29,29 @@ const Suppliers = () => {
         name: '',
         contact_info: ''
     });
+    const [loading, setLoading] = useState(false);
+    const [currentSearchTerm, setCurrentSearchTerm] = useState('');
+    const [currentStatus, setCurrentStatus] = useState(null);
 
-    const getSuppliers = async () => {
+    const getSuppliers = useCallback(async (searchTerm = '', isActive = null) => {
+        setLoading(true)
         try {
-            const data = await api.get('/supplier/');
+            let base_url = '/supplier/'; // API's base url
+            const params = new URLSearchParams();
+
+            if (searchTerm) {
+                params.append('searchTerm', searchTerm);
+            }
+
+            if (isActive !== null) {
+                params.append('isActive', isActive);
+            }
+
+            if (params.toString()) {
+                base_url += `?${params.toString()}`;
+            }
+
+            const data = await api.get(base_url);
             setSuppliers(data);
             console.log('Suppliers listed with success!', data);
         } catch (error) {
@@ -39,17 +59,24 @@ const Suppliers = () => {
             setAlertMessage('Error loading suppliers list');
             setAlertSeverity('error');
             setAlert(true);
+        } finally {
+            setLoading(false)
         }
-    };
+    }, []);
 
     useEffect(() => {
-        getSuppliers();
-    }, []);
+        getSuppliers(currentSearchTerm, currentStatus);
+    }, [getSuppliers, currentSearchTerm, currentStatus]);
+
+    const handleSearch = (searchTerm, isActive) => {
+        setCurrentSearchTerm(searchTerm);
+        setCurrentStatus(isActive);
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
-    }
+    };
 
     const handleSupplierUpdate = (supplier) => {
         setEditingSupplier(supplier);
@@ -86,7 +113,7 @@ const Suppliers = () => {
                 contact_info: ''
             });
             setOpenModal(false);
-            getSuppliers();
+            getSuppliers(currentSearchTerm, currentStatus);
         } catch (error) {
             console.error('Failed to register the Supplier!', error);
             setAlertMessage('Error creating supplier');
@@ -122,7 +149,7 @@ const Suppliers = () => {
                 contact_info: ''
             });
             setEditingSupplier(null);
-            getSuppliers();
+            getSuppliers(currentSearchTerm, currentStatus);
         } catch (error) {
             console.error('Failed to update the Supplier!', error);
             setAlertMessage('Error updating supplier');
@@ -140,7 +167,6 @@ const Suppliers = () => {
             setAlertMessage('Supplier status updated successfully!');
             setAlertSeverity('success');
             setAlert(true);
-            getSuppliers();
         } catch (error) {
             console.error('Failed to update the Supplier status!', error);
             setAlertMessage('Error updating supplier status');
@@ -156,7 +182,7 @@ const Suppliers = () => {
             setAlertMessage('Supplier deleted successfully!');
             setAlertSeverity('success');
             setAlert(true);
-            getSuppliers();
+            getSuppliers(currentSearchTerm, currentStatus);
         } catch (error) {
             console.error('Failed to delete the Supplier!', error);
             setAlertMessage('Error deleting supplier');
@@ -244,181 +270,191 @@ const Suppliers = () => {
                     </Box>
                 </Box>
                 <Divider />
-                <Table arial-label='suppliers table'>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell
-                                align='center'
-                                sx={{ fontWeight: 'bold', fontSize:'1.15rem' }}
-                            >
-                                Id
-                            </TableCell>
-                            <TableCell
-                                align='center'
-                                sx={{ fontWeight: 'bold', fontSize:'1.15rem' }}
-                            >
-                                Name
-                            </TableCell>
-                            <TableCell
-                                align='center'
-                                sx={{ fontWeight: 'bold', fontSize:'1.15rem' }}
-                            >
-                                Contact Info
-                            </TableCell>
-                            <TableCell
-                                align='center'
-                                sx={{ fontWeight: 'bold', fontSize:'1.15rem' }}
-                            >
-                                Status
-                            </TableCell>
-                            <TableCell
-                                align='center'
-                                sx={{ fontWeight: 'bold', fontSize:'1.15rem' }}
-                            >
-                                Actions
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {suppliers.map((supplier) => (
-                            <TableRow key={supplier.id}
-                                hover
-                                sx={{
-                                    '&:hover': {
-                                        cursor: 'pointer',
-                                    },
-                                }}>
+                <Box px={5} py={3}>
+                    <SupplierSearchFilter onSearch={handleSearch} />
+                </Box>
+                <Divider />
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    <Table arial-label='suppliers table'>
+                        <TableHead>
+                            <TableRow>
                                 <TableCell
-                                    align="center"
-                                    sx={{ fontSize:'1rem' }}
+                                    align='center'
+                                    sx={{ fontWeight: 'bold', fontSize: '1.15rem' }}
                                 >
-                                    {supplier.id}
+                                    Id
                                 </TableCell>
                                 <TableCell
-                                    align="center"
-                                    sx={{ fontSize:'1rem' }}
+                                    align='center'
+                                    sx={{ fontWeight: 'bold', fontSize: '1.15rem' }}
                                 >
-                                    {editingSupplier?.id === supplier.id ? (
-                                        <TextField
-                                            size="small"
-                                            value={formData.name}
-                                            onChange={handleChange}
-                                            name="name"
-                                            fullWidth
-                                        />
-                                    ) : (
-                                        supplier.name
-                                    )}
+                                    Name
                                 </TableCell>
                                 <TableCell
-                                    align="center"
-                                    sx={{ fontSize:'1rem' }}
+                                    align='center'
+                                    sx={{ fontWeight: 'bold', fontSize: '1.15rem' }}
                                 >
-                                    {editingSupplier?.id === supplier.id ? (
-                                        <TextField
-                                            size="small"
-                                            value={formData.contact_info}
-                                            onChange={handleChange}
-                                            name="contact_info"
-                                            fullWidth
-                                        />
-                                    ) : (
-                                        supplier.contact_info
-                                    )}
+                                    Contact Info
                                 </TableCell>
                                 <TableCell
-                                    align="center"
+                                    align='center'
+                                    sx={{ fontWeight: 'bold', fontSize: '1.15rem' }}
                                 >
-                                    <Box
-                                        display="flex"
-                                        justifyContent="center"
-                                        alignItems="center"
-                                        gap={2}
-                                        width="full"
+                                    Status
+                                </TableCell>
+                                <TableCell
+                                    align='center'
+                                    sx={{ fontWeight: 'bold', fontSize: '1.15rem' }}
+                                >
+                                    Actions
+                                </TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {suppliers.map((supplier) => (
+                                <TableRow key={supplier.id}
+                                    hover
+                                    sx={{
+                                        '&:hover': {
+                                            cursor: 'pointer',
+                                        },
+                                    }}>
+                                    <TableCell
+                                        align="center"
+                                        sx={{ fontSize: '1rem' }}
                                     >
-                                        {supplier.is_active ? (
-                                            <Box
-                                                sx={{ minWidth: 60, fontWeight: 'bold', textAlign: 'center' }}
-                                                px={2}
-                                                bgcolor="#87AA20"
-                                                borderRadius="10px"
-                                                color="#FFFFFF"
-                                            >
-                                                Active
+                                        {supplier.id}
+                                    </TableCell>
+                                    <TableCell
+                                        align="center"
+                                        sx={{ fontSize: '1rem' }}
+                                    >
+                                        {editingSupplier?.id === supplier.id ? (
+                                            <TextField
+                                                size="small"
+                                                value={formData.name}
+                                                onChange={handleChange}
+                                                name="name"
+                                                fullWidth
+                                            />
+                                        ) : (
+                                            supplier.name
+                                        )}
+                                    </TableCell>
+                                    <TableCell
+                                        align="center"
+                                        sx={{ fontSize: '1rem' }}
+                                    >
+                                        {editingSupplier?.id === supplier.id ? (
+                                            <TextField
+                                                size="small"
+                                                value={formData.contact_info}
+                                                onChange={handleChange}
+                                                name="contact_info"
+                                                fullWidth
+                                            />
+                                        ) : (
+                                            supplier.contact_info
+                                        )}
+                                    </TableCell>
+                                    <TableCell
+                                        align="center"
+                                    >
+                                        <Box
+                                            display="flex"
+                                            justifyContent="center"
+                                            alignItems="center"
+                                            gap={2}
+                                            width="full"
+                                        >
+                                            {supplier.is_active ? (
+                                                <Box
+                                                    sx={{ minWidth: 60, fontWeight: 'bold', textAlign: 'center' }}
+                                                    px={2}
+                                                    bgcolor="#87AA20"
+                                                    borderRadius="10px"
+                                                    color="#FFFFFF"
+                                                >
+                                                    Active
+                                                </Box>
+                                            ) : (
+                                                <Box
+                                                    sx={{ minWidth: 60, fontWeight: 'bold' }}
+                                                    px={2}
+                                                    bgcolor="#C54040"
+                                                    borderRadius="10px"
+                                                    color="#FFFFFF"
+                                                >
+                                                    Inactive
+                                                </Box>
+                                            )}
+                                            {editingSupplier?.id === supplier.id && (
+                                                <IconButton
+                                                    aria-label="Toggle Status"
+                                                    onClick={() => updateSupplierStatus(supplier)}
+                                                    sx={{
+                                                        color: supplier.is_active ? '#C54040' : '#87AA20',
+                                                        '&:hover': {
+                                                            backgroundColor: supplier.is_active ? 'rgba(197, 64, 64, 0.1)' : 'rgba(135, 170, 32, 0.1)'
+                                                        }
+                                                    }}
+                                                >
+                                                    {supplier.is_active ? <BlockIcon /> : <CheckCircleIcon />}
+                                                </IconButton>
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        {editingSupplier?.id === supplier.id ? (
+                                            <Box>
+                                                <IconButton
+                                                    aria-label="Save"
+                                                    onClick={updateSupplier}
+                                                    sx={{ color: '#87AA20' }}
+                                                >
+                                                    <CheckIcon />
+                                                </IconButton>
+                                                <IconButton
+                                                    aria-label="Cancel"
+                                                    onClick={() => {
+                                                        setEditingSupplier(null);
+                                                        setFormData({
+                                                            name: '',
+                                                            contact_info: ''
+                                                        });
+                                                    }}
+                                                    sx={{ color: '#C54040' }}
+                                                >
+                                                    <CloseIcon />
+                                                </IconButton>
                                             </Box>
                                         ) : (
-                                            <Box
-                                                sx={{ minWidth: 60, fontWeight: 'bold' }}
-                                                px={2}
-                                                bgcolor="#C54040"
-                                                borderRadius="10px"
-                                                color="#FFFFFF"
-                                            >
-                                                Inactive
+                                            <Box>
+                                                <IconButton
+                                                    aria-label="Edit"
+                                                    onClick={() => handleSupplierUpdate(supplier)}
+                                                    sx={{ color: '#384dc9' }}
+                                                >
+                                                    <EditIcon />
+                                                </IconButton>
+                                                <IconButton
+                                                    aria-label="Delete"
+                                                    onClick={() => deleteSupplier(supplier)}
+                                                    sx={{ color: '#C54040' }}
+                                                >
+                                                    <DeleteIcon />
+                                                </IconButton>
                                             </Box>
                                         )}
-                                        {editingSupplier?.id === supplier.id && (
-                                            <IconButton
-                                                aria-label="Toggle Status"
-                                                onClick={() => updateSupplierStatus(supplier)}
-                                                sx={{
-                                                    color: supplier.is_active ? '#C54040' : '#87AA20',
-                                                    '&:hover': {
-                                                        backgroundColor: supplier.is_active ? 'rgba(197, 64, 64, 0.1)' : 'rgba(135, 170, 32, 0.1)'
-                                                    }
-                                                }}
-                                            >
-                                                {supplier.is_active ? <BlockIcon /> : <CheckCircleIcon />}
-                                            </IconButton>
-                                        )}
-                                    </Box>
-                                </TableCell>
-                                <TableCell align="center">
-                                    {editingSupplier?.id === supplier.id ? (
-                                        <Box>
-                                            <IconButton
-                                                aria-label="Save"
-                                                onClick={updateSupplier}
-                                                sx={{ color: '#87AA20' }}
-                                            >
-                                                <CheckIcon />
-                                            </IconButton>
-                                            <IconButton
-                                                aria-label="Cancel"
-                                                onClick={() => {
-                                                    setEditingSupplier(null);
-                                                    setFormData({
-                                                        name: '',
-                                                        contact_info: ''
-                                                    });
-                                                }}
-                                                sx={{ color: '#C54040' }}
-                                            >
-                                                <CloseIcon />
-                                            </IconButton>
-                                        </Box>
-                                    ) : (
-                                        <Box>
-                                            <IconButton
-                                                aria-label="Edit"
-                                                onClick={() => handleSupplierUpdate(supplier)}
-                                                sx={{ color: '#384dc9' }}
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-                                            <IconButton
-                                                aria-label="Delete"
-                                                onClick={() => deleteSupplier(supplier)}
-                                                sx={{ color: '#C54040' }}
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Box>
-                                    )}
-                                </TableCell>
-                            </TableRow>))}
-                    </TableBody>
-                </Table>
+                                    </TableCell>
+                                </TableRow>))}
+                        </TableBody>
+                    </Table>
+                )}
             </TableContainer>
 
             <Modal open={openModal}
